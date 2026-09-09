@@ -1,0 +1,1791 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Horner Math Arena - Duel 1v1 Pembagian Polinomial Skema Horner</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Fredoka & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- MathJax 3 Configuration for rendering TeX -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']],
+        processEscapes: true
+      },
+      svg: { fontCache: 'global' },
+      startup: {
+        typeset: true,
+        pageReady: () => {
+          return MathJax.startup.defaultPageReady().then(() => {
+            renderMathIn(document.body);
+          });
+        }
+      }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            fun: ['Fredoka', 'cursive', 'sans-serif'],
+          },
+          colors: {
+            horner: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857'
+            },
+            p1: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8'
+            },
+            p2: {
+              50: '#fff1f2',
+              100: '#ffe4e6',
+              500: '#f43f5e',
+              600: '#e11d48',
+              700: '#be123c'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .horner-cell {
+      min-width: 44px;
+      min-height: 42px;
+      transition: all 0.15s ease-in-out;
+    }
+    .horner-cell.hovered {
+      background-color: #dbeafe !important;
+      border-color: #2563eb !important;
+      transform: scale(1.06);
+    }
+    .horner-active-p1 {
+      border-color: #2563eb !important;
+      background-color: #dbeafe !important;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35) !important;
+    }
+    .horner-active-p2 {
+      border-color: #e11d48 !important;
+      background-color: #ffe4e6 !important;
+      box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.35) !important;
+    }
+    .badge-pop {
+      animation: popIn 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes popIn {
+      0% { transform: scale(0.65); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .shake-anim {
+      animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+    }
+    @keyframes shake {
+      10%, 90% { transform: translate3d(-1px, 0, 0); }
+      20%, 80% { transform: translate3d(2px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-3px, 0, 0); }
+      40%, 60% { transform: translate3d(3px, 0, 0); }
+    }
+    .pulse-danger {
+      animation: pulseRed 1s infinite;
+    }
+    @keyframes pulseRed {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+    }
+    .floating-ornament {
+      animation: floatingFloat 4s ease-in-out infinite alternate;
+    }
+    .floating-ornament-delayed {
+      animation: floatingFloat 4.8s ease-in-out 1.5s infinite alternate;
+    }
+    @keyframes floatingFloat {
+      0% { transform: translateY(0px) rotate(0deg); }
+      100% { transform: translateY(-10px) rotate(2deg); }
+    }
+    .numpad-btn {
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .numpad-btn:active {
+      transform: scale(0.93);
+    }
+  </style>
+</head>
+
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans selection:bg-emerald-500 selection:text-white antialiased">
+
+  <header class="bg-white/95 backdrop-blur border-b border-slate-200 sticky top-0 z-40 px-3 py-2 sm:px-4 sm:py-2.5 shadow-sm">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
+      
+      <!-- Title & Icon -->
+      <div class="flex items-center gap-2.5 sm:gap-3 cursor-pointer" onclick="goToCoverScreen()">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 via-teal-600 to-indigo-600 flex items-center justify-center font-fun font-bold text-white text-xl shadow-md transform hover:rotate-6 transition-transform">
+          📐
+        </div>
+        <div>
+          <h1 class="font-fun font-bold text-base sm:text-xl text-slate-900 tracking-wide flex items-center gap-1.5 sm:gap-2">
+            Horner Math Arena 
+            <span class="text-[11px] bg-emerald-100 text-emerald-800 font-sans font-bold px-2 py-0.5 rounded-full border border-emerald-300">
+              Duel 1v1
+            </span>
+          </h1>
+          <p class="text-[11px] text-slate-500 hidden sm:block">Pembagian Polinomial dengan Skema Horner Standar Pembagi $(x - k)$</p>
+        </div>
+      </div>
+
+      <!-- Quick Actions & Scores -->
+      <div class="flex items-center gap-2 sm:gap-3 text-xs font-semibold">
+        <!-- Cover & Material Navigation in Header -->
+        <button onclick="goToCoverScreen()" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold border border-slate-300 flex items-center gap-1 transition-all" title="Halaman Sampul">
+          <span>🏠</span> <span class="hidden md:inline">Sampul</span>
+        </button>
+        <button onclick="openMaterialModal()" class="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold border border-amber-300 flex items-center gap-1 transition-all" title="Ringkasan Materi">
+          <span>📖</span> <span class="hidden md:inline">Materi</span>
+        </button>
+        <button onclick="openDevModal()" class="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-bold border border-indigo-300 flex items-center gap-1 transition-all" title="Informasi Pengembang">
+          <span>👨‍🏫</span> <span class="hidden md:inline">Pengembang</span>
+        </button>
+
+        <div class="h-5 w-px bg-slate-300 mx-1 hidden sm:block"></div>
+
+        <!-- P1 Pill -->
+        <div class="flex items-center gap-1.5 bg-blue-50 border border-blue-200 text-blue-800 px-2.5 py-1.5 rounded-lg shadow-sm">
+          <span class="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></span>
+          <span id="headerP1Name" class="max-w-[65px] sm:max-w-[90px] truncate">P1</span>:
+          <span id="headerP1Score" class="font-mono text-sm font-bold text-blue-700">0</span>
+        </div>
+
+        <div class="text-slate-400 font-black text-xs">VS</div>
+
+        <!-- P2 Pill -->
+        <div class="flex items-center gap-1.5 bg-rose-50 border border-rose-200 text-rose-800 px-2.5 py-1.5 rounded-lg shadow-sm">
+          <span class="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse"></span>
+          <span id="headerP2Name" class="max-w-[65px] sm:max-w-[90px] truncate">P2</span>:
+          <span id="headerP2Score" class="font-mono text-sm font-bold text-rose-700">0</span>
+        </div>
+
+        <!-- Sound Toggle -->
+        <button id="soundToggleBtn" onclick="toggleSound()" class="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-300 transition-colors" title="Nyalakan/Matikan Suara">
+          <svg id="soundOnIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+          <svg id="soundOffIcon" class="w-4 h-4 hidden text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/></svg>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 flex flex-col justify-center relative">
+
+    <!-- ================= 1. COVER SCREEN ================= -->
+    <div id="coverScreen" class="max-w-4xl mx-auto w-full bg-white border border-slate-200 rounded-3xl p-6 sm:p-10 shadow-2xl relative overflow-hidden flex flex-col items-center text-center">
+      
+      <!-- Background Ambient Geometric Circles -->
+      <div class="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-emerald-100/50 pointer-events-none filter blur-2xl"></div>
+      <div class="absolute -bottom-16 -left-16 w-56 h-56 rounded-full bg-indigo-100/50 pointer-events-none filter blur-2xl"></div>
+
+      <!-- Floating Math Formula Pills -->
+      <div class="hidden md:flex absolute top-10 left-6 floating-ornament bg-emerald-50 border border-emerald-300 text-emerald-800 font-mono text-xs px-3 py-1.5 rounded-2xl shadow-sm items-center gap-1.5">
+        <span>✨</span> <span>$f(x) = (x-k) \cdot H(x) + S$</span>
+      </div>
+      <div class="hidden md:flex absolute top-10 right-6 floating-ornament-delayed bg-blue-50 border border-blue-300 text-blue-800 font-mono text-xs px-3 py-1.5 rounded-2xl shadow-sm items-center gap-1.5">
+        <span>🎯</span> <span>$x - k = 0 \implies x = k$</span>
+      </div>
+      <div class="hidden md:flex absolute bottom-8 left-8 floating-ornament-delayed bg-amber-50 border border-amber-300 text-amber-800 font-mono text-xs px-3 py-1.5 rounded-2xl shadow-sm items-center gap-1.5">
+        <span>💡</span> <span>$\text{Sisa} = S = f(k)$</span>
+      </div>
+      <div class="hidden md:flex absolute bottom-8 right-8 floating-ornament bg-rose-50 border border-rose-300 text-rose-800 font-mono text-xs px-3 py-1.5 rounded-2xl shadow-sm items-center gap-1.5">
+        <span>⚡</span> <span>$\text{Derajat } H(x) = n - 1$</span>
+      </div>
+
+      <!-- Badge Kurikulum -->
+      <div class="inline-flex items-center gap-2 py-1 px-4 rounded-full bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-800 font-bold text-xs tracking-wider uppercase mb-4 border border-emerald-300 shadow-sm">
+        <span>🎓</span> Matematika Tingkat Lanjut — Aljabar Polinomial
+      </div>
+
+      <!-- Hero Visual Icon -->
+      <div class="relative mb-4">
+        <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-tr from-emerald-600 via-teal-600 to-indigo-600 flex items-center justify-center text-4xl sm:text-5xl shadow-xl shadow-emerald-500/20 text-white font-fun font-bold transform hover:scale-105 transition-transform duration-300">
+          📐
+        </div>
+        <div class="absolute -bottom-2 -right-2 bg-amber-400 text-slate-900 text-xs font-black px-2 py-0.5 rounded-lg border-2 border-white shadow">
+          1v1
+        </div>
+      </div>
+
+      <!-- Game Title & Subtitle -->
+      <h1 class="font-fun text-3xl sm:text-5xl font-black text-slate-900 mb-3 tracking-tight">
+        HORNER MATH ARENA
+      </h1>
+      <p class="text-slate-600 text-sm sm:text-base max-w-2xl leading-relaxed mb-6">
+        Media pembelajaran gamifikasi interaktif untuk mengasah kecakapan aljabar dalam 
+        <strong>Pembagian Polinomial dengan Metode Horner</strong>. Bersaing 1 lawan 1 secara adil, cepat, dan presisi!
+      </p>
+
+      <!-- Visual Scheme Preview Banner -->
+      <div class="p-3 sm:p-4 rounded-2xl bg-slate-50 border border-slate-200 text-slate-700 text-xs max-w-xl w-full mb-8 shadow-inner flex items-center justify-center gap-4 flex-wrap">
+        <div class="flex items-center gap-1.5 font-semibold text-emerald-800">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span>Pengali Pembuat Nol $k$</span>
+        </div>
+        <div class="flex items-center gap-1.5 font-semibold text-blue-800">
+          <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+          <span>Hasil Bagi $H(x)$</span>
+        </div>
+        <div class="flex items-center gap-1.5 font-semibold text-amber-800">
+          <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+          <span>Sisa Pembagian $S = f(k)$</span>
+        </div>
+      </div>
+
+      <!-- 3 Primary Action Buttons -->
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-3.5 w-full max-w-md mb-4">
+        <!-- Button: Start Game / Arena -->
+        <button onclick="goToLobbyScreen()" class="w-full sm:flex-1 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 font-bold text-white shadow-lg shadow-emerald-500/25 text-sm sm:text-base transition-all transform active:scale-95 flex items-center justify-center gap-2">
+          <span>🎮 Masuk ke Arena</span>
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+        </button>
+
+        <!-- Button: Material Modal -->
+        <button onclick="openMaterialModal()" class="w-full sm:w-auto py-3.5 px-5 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 font-bold text-sm transition-all active:scale-95 flex items-center justify-center gap-2">
+          <span>📖 Materi</span>
+        </button>
+
+        <!-- Button: Developer Modal -->
+        <button onclick="openDevModal()" class="w-full sm:w-auto py-3.5 px-5 rounded-2xl bg-indigo-100 hover:bg-indigo-200 text-indigo-900 border border-indigo-300 font-bold text-sm transition-all active:scale-95 flex items-center justify-center gap-2">
+          <span>👨‍🏫 Pengembang</span>
+        </button>
+      </div>
+
+      <!-- Footer Credit Note -->
+      <div class="text-[11px] text-slate-400 mt-2">
+        Dikembangkan khusus untuk pembelajaran matematika modern • Kurikulum Merdeka
+      </div>
+    </div>
+
+    <!-- ================= 2. LOBBY SCREEN (PENDAFTARAN PEMAIN & BABAK) ================= -->
+    <div id="startScreen" class="hidden max-w-3xl mx-auto w-full bg-white border border-slate-200 rounded-3xl p-5 sm:p-8 shadow-xl">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-5">
+        <button onclick="goToCoverScreen()" class="text-xs font-bold text-slate-500 hover:text-emerald-700 flex items-center gap-1">
+          <span>⬅</span> <span>Kembali ke Sampul</span>
+        </button>
+        <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+          Lobi Turnamen Duel 1v1
+        </span>
+      </div>
+
+      <div class="text-center mb-6">
+        <h2 class="font-fun text-2xl sm:text-3xl font-bold text-slate-900 mb-1">
+          Pengaturan Pertandingan 1 Lawan 1
+        </h2>
+        <p class="text-slate-600 text-xs sm:text-sm max-w-lg mx-auto leading-relaxed">
+          Tuliskan nama kedua peserta, tentukan jumlah babak yang ingin dimainkan, dan bersiaplah memecahkan pembagian polinomial dengan metode Horner!
+        </p>
+      </div>
+
+      <!-- Player Names Input -->
+      <div class="grid sm:grid-cols-2 gap-3.5 mb-5">
+        <div class="p-4 rounded-2xl bg-blue-50/70 border-2 border-blue-200 flex flex-col gap-2">
+          <div class="flex items-center gap-2 text-blue-700 font-bold text-sm">
+            <span class="w-3 h-3 rounded-full bg-blue-600"></span>
+            <span>Pemain 1 (Sisi Kiri)</span>
+          </div>
+          <label class="text-xs text-slate-500">Nama Siswa / Tim:</label>
+          <input id="inputP1Name" type="text" value="Pemain 1" maxlength="16" class="w-full px-3 py-2 rounded-xl bg-white border border-blue-300 font-semibold text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Nama Pemain 1...">
+        </div>
+
+        <div class="p-4 rounded-2xl bg-rose-50/70 border-2 border-rose-200 flex flex-col gap-2">
+          <div class="flex items-center gap-2 text-rose-700 font-bold text-sm">
+            <span class="w-3 h-3 rounded-full bg-rose-600"></span>
+            <span>Pemain 2 (Sisi Kanan)</span>
+          </div>
+          <label class="text-xs text-slate-500">Nama Siswa / Tim:</label>
+          <input id="inputP2Name" type="text" value="Pemain 2" maxlength="16" class="w-full px-3 py-2 rounded-xl bg-white border border-rose-300 font-semibold text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-rose-500" placeholder="Nama Pemain 2...">
+        </div>
+      </div>
+
+      <!-- Match Options -->
+      <div class="grid sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 mb-5">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5">Jumlah Babak Pertandingan:</label>
+          <select id="roundsSelect" class="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <option value="6" selected>6 Babak (Standar Kilat)</option>
+            <option value="10">10 Babak (Duel Kelas Rekomendasi)</option>
+            <option value="20">20 Babak (Turnamen Seru)</option>
+            <option value="50">50 Babak (Maraton Horner Penuh)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1.5">Bank Soal (50 Soal Horner Terpilih):</label>
+          <div class="text-xs text-slate-600 leading-relaxed pt-1">
+            Mencakup derajat 2, 3, dan 4 dengan pembagi linier $(x \pm k)$, kasus koefisien nol ($0x^n$), diacak dinamis tanpa duplikasi!
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Concept Reminder Card -->
+      <div class="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs mb-6">
+        <div class="font-bold flex items-center gap-1.5 mb-1 text-amber-800">
+          <span>💡</span> Langkah Skema Horner Biasa:
+        </div>
+        <ul class="list-disc list-inside space-y-1 text-amber-800/90 leading-relaxed pl-1">
+          <li>Cari nilai pembuat nol pembagi: $x - k = 0 \iff x = k$. Letakkan di sisi kiri bagan.</li>
+          <li>Koefisien pertama langsung diturunkan ke bawah.</li>
+          <li>Kalikan hasil bawah dengan pengali $k$, letakkan di kolom berikutnya, lalu <strong>jumlahkan (+)</strong> ke bawah.</li>
+          <li>Kolom paling ujung kanan adalah <strong>Sisa Pembagian $S = f(k)$</strong>.</li>
+        </ul>
+      </div>
+
+      <!-- Start Button -->
+      <button onclick="startDuelGame()" class="w-full py-3.5 sm:py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:to-indigo-500 font-bold text-white shadow-lg shadow-emerald-500/25 text-base transition-all transform active:scale-[0.99] flex items-center justify-center gap-2">
+        <span>Mulai Duel Horner Sekarang</span>
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+      </button>
+    </div>
+
+    <!-- ================= 3. GAME ARENA SCREEN (DUEL 1V1) ================= -->
+    <div id="gameArena" class="hidden flex flex-col gap-3 max-w-7xl mx-auto w-full">
+      
+      <!-- Top Shared Bar: Problem Display & Shared Countdown -->
+      <div class="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 shadow-sm flex flex-col gap-3">
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <div class="flex items-center gap-2">
+            <span id="roundBadge" class="bg-emerald-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+              Babak 1 / 6
+            </span>
+            <span id="modeBadge" class="bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+              <span>🖐️ Drag & Drop</span>
+            </span>
+          </div>
+
+          <!-- Common Countdown Timer -->
+          <div class="flex items-center gap-2.5 min-w-[190px]">
+            <span class="text-xs font-bold text-slate-500 flex items-center gap-1 font-mono">
+              ⏱️ <span id="timerText" class="text-slate-900 text-sm">60s</span>
+            </span>
+            <div class="flex-1 h-3 bg-slate-200 rounded-full overflow-hidden p-0.5">
+              <div id="timerBar" class="h-full bg-emerald-500 rounded-full transition-all duration-300 ease-linear w-full"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MathJax TeX Display Box -->
+        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
+          <div class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Soal Pembagian Polinomial:</div>
+          <div id="mathProblemDisplay" class="text-base sm:text-xl font-medium text-slate-900 overflow-x-auto py-1">
+            <!-- Dynamic MathJax formula injected here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Split Screen Boards: Player 1 vs Player 2 -->
+      <div class="grid lg:grid-cols-2 gap-4 items-start">
+
+        <!-- ================= PLAYER 1 BOARD (BLUE) ================= -->
+        <div id="p1Card" class="bg-white border-2 border-blue-200 rounded-2xl p-3.5 sm:p-4 shadow-sm flex flex-col gap-3 transition-all relative overflow-hidden">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+            <div class="flex items-center gap-2">
+              <span class="w-3.5 h-3.5 rounded-full bg-blue-600"></span>
+              <h3 id="p1CardTitle" class="font-bold text-slate-800 text-sm sm:text-base">Pemain 1</h3>
+            </div>
+            <div class="flex items-center gap-3 text-xs">
+              <span class="text-slate-500">Skor:</span>
+              <span id="p1ScoreDisplay" class="font-mono font-bold text-blue-600 text-base">0</span>
+              <span id="p1StreakTag" class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md font-bold text-[11px]">0🔥</span>
+            </div>
+          </div>
+
+          <!-- Horner Grid P1 -->
+          <div class="overflow-x-auto pb-1 flex justify-center">
+            <div id="p1HornerContainer" class="inline-block"></div>
+          </div>
+
+          <!-- P1 Drag & Drop Chips Bank -->
+          <div id="p1ChipBankWrapper" class="pt-2 border-t border-slate-100">
+            <div class="flex items-center justify-between text-xs text-slate-500 mb-1.5">
+              <span class="font-medium">Pilihan Angka P1 (Klik/Seret ke kotak kosong):</span>
+              <button onclick="resetPlayerSlots(1)" class="text-blue-600 hover:text-blue-800 font-semibold text-[11px]">Reset Pilihan</button>
+            </div>
+            <div id="p1ChipBank" class="flex flex-wrap items-center justify-center gap-1.5 p-2 bg-blue-50/50 rounded-xl border border-blue-100 min-h-[50px]"></div>
+          </div>
+
+          <!-- P1 Virtual Numpad (for Type Mode) -->
+          <div id="p1NumpadWrapper" class="hidden pt-2 border-t border-slate-100">
+            <div class="flex items-center justify-between text-xs text-slate-600 mb-2">
+              <span class="font-semibold flex items-center gap-1 text-blue-700">
+                <span>🔢 Numpad P1</span>
+                <span id="p1ActiveSlotLabel" class="text-[11px] font-normal text-slate-500">(Pilih kotak target)</span>
+              </span>
+              <button onclick="clearActiveSlot(1)" class="text-[11px] text-slate-500 hover:text-rose-600 font-semibold">Kosongkan Sel</button>
+            </div>
+            <div class="grid grid-cols-4 gap-1.5 max-w-xs mx-auto">
+              <button onclick="numpadInput(1, '7')" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-blue-100 text-slate-800 font-mono font-bold text-base shadow-sm border border-slate-200">7</button>
+              <button onclick="numpadInput(1, '8')" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-blue-100 text-slate-800 font-mono font-bold text-base shadow-sm border border-slate-200">8</button>
+              <button onclick="numpadInput(1, '9')" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-blue-100 text-slate-800 font-mono font-bold text-base shadow-sm border border-slate-200">9</button>
+              <button onclick="numpadBackspace(1)" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-mono font-bold text-sm shadow-sm border border-rose-200">⌫</button>
+
+              <button onclick="numpadInput(1, '4')" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-blue-100 text-slate-800 font-mono font-bold text-base shadow-sm border border-slate-200">4</button>
+              <button onclick="numpadInput(1, '5')" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-blue-100 text-slate-800 font-mono font-bold text-base shadow-sm border border-slate-200">5</button>
+              <button onclick="numpadInput(1, '6')" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-blue-100 text-slate-800 font-mono font-bold text-base shadow-sm border border-slate-200">6</button>
+              <button onclick="numpadToggleNegative(1)" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 font-mono font-bold text-sm shadow-sm border border-amber-200">±</button>
+
+              <button onclick="numpadInput(1, '1')" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-blue-100 text-slate-800 font-mono font-bold text-base shadow-sm border border-slate-200">1</button>
+              <button onclick="numpadInput(1, '2')" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-blue-100 text-slate-800 font-mono font-bold text-base shadow-sm border border-slate-200">2</button>
+              <button onclick="numpadInput(1, '3')" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-blue-100 text-slate-800 font-mono font-bold text-base shadow-sm border border-slate-200">3</button>
+              <button onclick="numpadNextSlot(1)" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-mono font-bold text-xs shadow-sm border border-blue-200" title="Pindah Sel Berikutnya">Tab ➡</button>
+
+              <button onclick="numpadInput(1, '0')" class="numpad-btn col-span-2 py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-blue-100 text-slate-800 font-mono font-bold text-base shadow-sm border border-slate-200">0</button>
+              <button onclick="clearActiveSlot(1)" class="numpad-btn col-span-2 py-2 sm:py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs shadow-sm border border-slate-300">Kosongkan (C)</button>
+            </div>
+          </div>
+
+          <!-- P1 Submit Bar -->
+          <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 mt-auto">
+            <span id="p1StatusText" class="text-xs text-slate-500 font-medium">Lengkapi bagan Horner...</span>
+            <button id="p1SubmitBtn" onclick="submitPlayerAnswer(1)" class="py-2 px-5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm shadow-md transition-all active:scale-95 flex items-center gap-1.5">
+              <span>Kirim Jawaban P1</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ================= PLAYER 2 BOARD (ROSE) ================= -->
+        <div id="p2Card" class="bg-white border-2 border-rose-200 rounded-2xl p-3.5 sm:p-4 shadow-sm flex flex-col gap-3 transition-all relative overflow-hidden">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+            <div class="flex items-center gap-2">
+              <span class="w-3.5 h-3.5 rounded-full bg-rose-600"></span>
+              <h3 id="p2CardTitle" class="font-bold text-slate-800 text-sm sm:text-base">Pemain 2</h3>
+            </div>
+            <div class="flex items-center gap-3 text-xs">
+              <span class="text-slate-500">Skor:</span>
+              <span id="p2ScoreDisplay" class="font-mono font-bold text-rose-600 text-base">0</span>
+              <span id="p2StreakTag" class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded-md font-bold text-[11px]">0🔥</span>
+            </div>
+          </div>
+
+          <!-- Horner Grid P2 -->
+          <div class="overflow-x-auto pb-1 flex justify-center">
+            <div id="p2HornerContainer" class="inline-block"></div>
+          </div>
+
+          <!-- P2 Drag & Drop Chips Bank -->
+          <div id="p2ChipBankWrapper" class="pt-2 border-t border-slate-100">
+            <div class="flex items-center justify-between text-xs text-slate-500 mb-1.5">
+              <span class="font-medium">Pilihan Angka P2 (Klik/Seret ke kotak kosong):</span>
+              <button onclick="resetPlayerSlots(2)" class="text-rose-600 hover:text-rose-800 font-semibold text-[11px]">Reset Pilihan</button>
+            </div>
+            <div id="p2ChipBank" class="flex flex-wrap items-center justify-center gap-1.5 p-2 bg-rose-50/50 rounded-xl border border-rose-100 min-h-[50px]"></div>
+          </div>
+
+          <!-- P2 Virtual Numpad (for Type Mode) -->
+          <div id="p2NumpadWrapper" class="hidden pt-2 border-t border-slate-100">
+            <div class="flex items-center justify-between text-xs text-slate-600 mb-2">
+              <span class="font-semibold flex items-center gap-1 text-rose-700">
+                <span>🔢 Numpad P2</span>
+                <span id="p2ActiveSlotLabel" class="text-[11px] font-normal text-slate-500">(Pilih kotak target)</span>
+              </span>
+              <button onclick="clearActiveSlot(2)" class="text-[11px] text-slate-500 hover:text-rose-600 font-semibold">Kosongkan Sel</button>
+            </div>
+            <div class="grid grid-cols-4 gap-1.5 max-w-xs mx-auto">
+              <button onclick="numpadInput(2, '7')" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-800 font-mono font-bold text-base shadow-sm border border-slate-200">7</button>
+              <button onclick="numpadInput(2, '8')" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-800 font-mono font-bold text-base shadow-sm border border-slate-200">8</button>
+              <button onclick="numpadInput(2, '9')" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-800 font-mono font-bold text-base shadow-sm border border-slate-200">9</button>
+              <button onclick="numpadBackspace(2)" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-mono font-bold text-sm shadow-sm border border-rose-200">⌫</button>
+
+              <button onclick="numpadInput(2, '4')" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-800 font-mono font-bold text-base shadow-sm border border-slate-200">4</button>
+              <button onclick="numpadInput(2, '5')" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-800 font-mono font-bold text-base shadow-sm border border-slate-200">5</button>
+              <button onclick="numpadInput(2, '6')" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-800 font-mono font-bold text-base shadow-sm border border-slate-200">6</button>
+              <button onclick="numpadToggleNegative(2)" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 font-mono font-bold text-sm shadow-sm border border-amber-200">±</button>
+
+              <button onclick="numpadInput(2, '1')" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-800 font-mono font-bold text-base shadow-sm border border-slate-200">1</button>
+              <button onclick="numpadInput(2, '2')" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-800 font-mono font-bold text-base shadow-sm border border-slate-200">2</button>
+              <button onclick="numpadInput(2, '3')" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-800 font-mono font-bold text-base shadow-sm border border-slate-200">3</button>
+              <button onclick="numpadNextSlot(2)" class="numpad-btn py-2 sm:py-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-mono font-bold text-xs shadow-sm border border-rose-200" title="Pindah Sel Berikutnya">Tab ➡</button>
+
+              <button onclick="numpadInput(2, '0')" class="numpad-btn col-span-2 py-2 sm:py-2.5 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-800 font-mono font-bold text-base shadow-sm border border-slate-200">0</button>
+              <button onclick="clearActiveSlot(2)" class="numpad-btn col-span-2 py-2 sm:py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs shadow-sm border border-slate-300">Kosongkan (C)</button>
+            </div>
+          </div>
+
+          <!-- P2 Submit Bar -->
+          <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 mt-auto">
+            <span id="p2StatusText" class="text-xs text-slate-500 font-medium">Lengkapi bagan Horner...</span>
+            <button id="p2SubmitBtn" onclick="submitPlayerAnswer(2)" class="py-2 px-5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs sm:text-sm shadow-md transition-all active:scale-95 flex items-center gap-1.5">
+              <span>Kirim Jawaban P2</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ================= 4. GAME OVER SCREEN ================= -->
+    <div id="gameOverScreen" class="hidden max-w-xl mx-auto w-full bg-white border border-slate-200 rounded-3xl p-6 sm:p-9 shadow-2xl text-center badge-pop">
+      <div class="w-20 h-20 rounded-3xl bg-gradient-to-tr from-amber-400 to-amber-200 mx-auto flex items-center justify-center text-4xl shadow-md mb-4">
+        🏆
+      </div>
+      <h2 id="duelWinnerTitle" class="font-fun text-3xl font-bold text-slate-900 mb-1">Juara Horner Math Arena!</h2>
+      <p id="duelWinnerSubtitle" class="text-slate-600 text-sm mb-6">Pertandingan perhitungan polinomial yang luar biasa!</p>
+
+      <div class="grid grid-cols-2 gap-4 mb-6">
+        <div class="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-center">
+          <div id="endP1Name" class="text-xs font-bold text-blue-700 uppercase mb-1">Pemain 1</div>
+          <div id="endP1Score" class="text-3xl font-black text-blue-800 font-mono">0</div>
+          <div class="text-[11px] text-blue-600 mt-1">Skor Akhir</div>
+        </div>
+        <div class="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-center">
+          <div id="endP2Name" class="text-xs font-bold text-rose-700 uppercase mb-1">Pemain 2</div>
+          <div id="endP2Score" class="text-3xl font-black text-rose-800 font-mono">0</div>
+          <div class="text-[11px] text-rose-600 mt-1">Skor Akhir</div>
+        </div>
+      </div>
+
+      <div id="duelSummaryNote" class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs sm:text-sm mb-6 leading-relaxed">
+        Kerja bagus! Ketelitian dalam perkalian pengali $k$ dan penjumlahan ke bawah kalian sudah sangat tangguh.
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-3">
+        <button onclick="startDuelGame()" class="flex-1 py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-500 font-bold text-white shadow-md transition-all">
+          Mainkan Pertandingan Baru
+        </button>
+        <button onclick="goToCoverScreen()" class="py-3.5 px-5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold border border-slate-300 transition-all">
+          Ke Halaman Sampul
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= 5. MODAL: MATERI HORNER STANDAR ================= -->
+    <div id="materialModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+      <div class="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 shadow-2xl relative">
+        <button onclick="closeMaterialModal()" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold flex items-center justify-center">
+          ✕
+        </button>
+
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-2xl">
+            📖
+          </div>
+          <div>
+            <h3 class="font-fun text-2xl font-bold text-slate-900">Materi Skema Horner Standar</h3>
+            <p class="text-xs text-slate-500">Pembagian Polinomial $f(x)$ dengan Pembagi Linier $P(x) = (x - k)$</p>
+          </div>
+        </div>
+
+        <div class="space-y-4 text-xs sm:text-sm text-slate-700 leading-relaxed">
+          <div class="p-4 rounded-2xl bg-amber-50/70 border border-amber-200">
+            <h4 class="font-bold text-amber-900 mb-1 flex items-center gap-1.5">
+              <span>🎯</span> 1. Nilai Pembuat Nol Pembagi ($k$)
+            </h4>
+            <p>Jika pembagi berbentuk $(x - k)$, samakan dengan nol untuk memperoleh pengali:</p>
+            <div class="my-2 p-2 bg-white rounded-xl border border-amber-200 text-center font-mono text-xs">
+              \[ x - k = 0 \implies x = k \]
+            </div>
+            <p class="text-slate-600">Nilai $k$ ini diletakkan pada sisi paling kiri bagan Horner.</p>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200">
+            <h4 class="font-bold text-emerald-900 mb-1 flex items-center gap-1.5">
+              <span>⚙️</span> 2. Aturan Operasi Bagan (Turun — Kali — Jumlah)
+            </h4>
+            <ul class="list-disc list-inside space-y-1 text-slate-700">
+              <li><strong>Baris Atas:</strong> Koefisien-koefisien polinomial $f(x)$ ditulis berurutan dari pangkat tertinggi hingga suku tetap/konstanta. Jika ada suku yang hilang (rumpang), koefisiennya ditulis <strong>$0$</strong>.</li>
+              <li><strong>Langkah 1:</strong> Koefisien pertama langsung <em>turun</em> ke baris bawah.</li>
+              <li><strong>Langkah 2:</strong> Kalikan angka di baris bawah dengan $k$, tuliskan hasilnya di kolom berikutnya pada baris tengah.</li>
+              <li><strong>Langkah 3:</strong> Lakukan <strong>penjumlahan (+)</strong> antara angka di baris atas dan baris tengah.</li>
+              <li>Ulangi langkah kali dan jumlah hingga kolom terakhir selesai!</li>
+            </ul>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-blue-50/70 border border-blue-200">
+            <h4 class="font-bold text-blue-900 mb-1 flex items-center gap-1.5">
+              <span>📊</span> 3. Membaca Hasil Bagi $H(x)$ dan Sisa $S$
+            </h4>
+            <p>Pada baris terbawah hasil penjumlahan:</p>
+            <ul class="list-disc list-inside space-y-1 text-slate-700 mt-1">
+              <li>Kotak paling kanan adalah <strong>Sisa Pembagian</strong>: $S = f(k)$ (berupa konstanta).</li>
+              <li>Kotak-kotak di sebelah kirinya adalah <strong>koefisien Hasil Bagi $H(x)$</strong> dengan derajat $n - 1$.</li>
+            </ul>
+            <div class="my-2 p-2 bg-white rounded-xl border border-blue-200 text-center font-mono text-xs">
+              \[ f(x) = (x - k) \cdot H(x) + S \]
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end">
+          <button onclick="closeMaterialModal()" class="py-2.5 px-6 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs">
+            Tutup Materi
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= 6. MODAL: PROFIL PENGEMBANG ================= -->
+    <div id="developerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+      <div class="bg-white border border-slate-200 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative text-center">
+        <button onclick="closeDevModal()" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold flex items-center justify-center">
+          ✕
+        </button>
+
+        <!-- Developer Avatar Image -->
+        <div class="relative w-28 h-28 mx-auto mb-4">
+          <div class="w-28 h-28 rounded-full p-1 bg-gradient-to-tr from-emerald-500 via-teal-500 to-indigo-600 shadow-xl overflow-hidden">
+            <img src="https://iili.io/CSAHRQ1.png" alt="Rahmat Djafar, S.Pd., Gr." class="w-full h-full object-cover rounded-full bg-slate-100" onerror="this.onerror=null; this.src='https://placehold.co/150x150/10b981/ffffff?text=RD';">
+          </div>
+          <div class="absolute bottom-0 right-1 bg-emerald-500 text-white p-1.5 rounded-full border-2 border-white shadow text-xs">
+            ✓
+          </div>
+        </div>
+
+        <!-- Name & Title -->
+        <h3 class="font-fun text-2xl font-bold text-slate-900 mb-1">
+          Rahmat Djafar, S.Pd., Gr.
+        </h3>
+        <p class="text-xs font-semibold text-emerald-700 bg-emerald-50 inline-block px-3 py-1 rounded-full border border-emerald-200 mb-4">
+          Pendidik Matematika & Pengembang Media Pembelajaran
+        </p>
+
+        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed mb-6">
+          Berdedikasi dalam menciptakan media pembelajaran interaktif berbasis teknologi web yang menyenangkan, bermakna, dan kontekstual untuk mendukung kemajuan pendidikan matematika Indonesia.
+        </p>
+
+        <!-- Instagram Badge Link -->
+        <div class="p-4 rounded-2xl bg-gradient-to-r from-pink-50 via-rose-50 to-amber-50 border border-pink-200 mb-5">
+          <div class="text-xs text-slate-500 mb-2 font-medium">Terhubung di Media Sosial Resmi:</div>
+          <a href="https://www.instagram.com/mat_djafar" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 text-white font-bold text-xs sm:text-sm shadow-md hover:opacity-95 transition-opacity transform active:scale-95">
+            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+            <span>Instagram: @mat_djafar</span>
+          </a>
+        </div>
+
+        <button onclick="closeDevModal()" class="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors">
+          Tutup
+        </button>
+      </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="duelToast" class="fixed bottom-5 right-5 pointer-events-none transition-all duration-300 transform translate-y-20 opacity-0 z-50">
+      <div id="toastInnerCard" class="p-4 rounded-2xl shadow-xl border flex items-center gap-3 backdrop-blur bg-white/95 text-slate-800">
+        <span id="toastEmoji" class="text-2xl">✨</span>
+        <div>
+          <h4 id="toastHeader" class="font-bold text-sm">Info</h4>
+          <p id="toastDetail" class="text-xs text-slate-600">Pemberitahuan turnamen</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    let audioContext = null;
+    let isMuted = false;
+
+    // Helper MathJax render
+    function renderMathIn(target) {
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        const elements = Array.isArray(target) ? target : [target];
+        window.MathJax.typesetPromise(elements).catch(err => console.warn('MathJax err:', err));
+      } else {
+        const timer = setInterval(() => {
+          if (window.MathJax && window.MathJax.typesetPromise) {
+            clearInterval(timer);
+            const elements = Array.isArray(target) ? target : [target];
+            window.MathJax.typesetPromise(elements).catch(e => console.warn(e));
+          }
+        }, 100);
+        setTimeout(() => clearInterval(timer), 3500);
+      }
+    }
+
+    function initAudio() {
+      if (!audioContext) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) audioContext = new AudioCtx();
+      }
+      if (audioContext && audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+    }
+
+    function playTone(type) {
+      if (isMuted) return;
+      try {
+        initAudio();
+        if (!audioContext) return;
+
+        const t = audioContext.currentTime;
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+
+        if (type === 'correct') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523.25, t); // C5
+          osc.frequency.setValueAtTime(659.25, t + 0.08); // E5
+          osc.frequency.setValueAtTime(783.99, t + 0.16); // G5
+          gain.gain.setValueAtTime(0.18, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+          osc.start(t);
+          osc.stop(t + 0.35);
+        } else if (type === 'wrong') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(200, t);
+          osc.frequency.linearRampToValueAtTime(110, t + 0.22);
+          gain.gain.setValueAtTime(0.2, t);
+          gain.gain.exponentialRampToValueAtTime(0.01, t + 0.22);
+          osc.start(t);
+          osc.stop(t + 0.22);
+        } else if (type === 'tick') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(950, t);
+          gain.gain.setValueAtTime(0.04, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+          osc.start(t);
+          osc.stop(t + 0.04);
+        } else if (type === 'tap') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(520, t);
+          osc.frequency.exponentialRampToValueAtTime(740, t + 0.05);
+          gain.gain.setValueAtTime(0.08, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+          osc.start(t);
+          osc.stop(t + 0.05);
+        } else if (type === 'win') {
+          [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
+            const o = audioContext.createOscillator();
+            const g = audioContext.createGain();
+            o.connect(g);
+            g.connect(audioContext.destination);
+            o.frequency.setValueAtTime(freq, t + idx * 0.12);
+            g.gain.setValueAtTime(0.16, t + idx * 0.12);
+            g.gain.exponentialRampToValueAtTime(0.001, t + idx * 0.12 + 0.3);
+            o.start(t + idx * 0.12);
+            o.stop(t + idx * 0.12 + 0.3);
+          });
+        }
+      } catch (e) {
+        console.warn('Audio error:', e);
+      }
+    }
+
+    function toggleSound() {
+      isMuted = !isMuted;
+      document.getElementById('soundOnIcon').classList.toggle('hidden', isMuted);
+      document.getElementById('soundOffIcon').classList.toggle('hidden', !isMuted);
+    }
+  </script>
+
+  <script>
+    /*
+     * Bank 50 Soal Pembagian Polinomial dengan Skema Horner Standar
+     * Pembagi linier: (x - k) -> pembuat nol: x = k
+     * Derajat 2, 3, dan 4, serta variasi suku rumpang (0).
+     */
+    function build50HornerQuestions() {
+      const bank = [];
+      const blueprints = [
+        // === TINGKAT 1: Polinomial Derajat 2 dibagi (x - k) ===
+        { poly: '2x^2 + 5x - 3', div: 'x - 2', k: 2, coeffs: [2, 5, -3] },
+        { poly: 'x^2 - 4x + 7', div: 'x - 3', k: 3, coeffs: [1, -4, 7] },
+        { poly: '3x^2 - 2x + 5', div: 'x + 1', k: -1, coeffs: [3, -2, 5] },
+        { poly: 'x^2 + 6x + 8', div: 'x + 2', k: -2, coeffs: [1, 6, 8] },
+        { poly: '2x^2 - 7x - 4', div: 'x - 4', k: 4, coeffs: [2, -7, -4] },
+        { poly: '4x^2 + 3x - 1', div: 'x + 1', k: -1, coeffs: [4, 3, -1] },
+        { poly: 'x^2 - 9', div: 'x - 3', k: 3, coeffs: [1, 0, -9] },
+        { poly: '2x^2 - 8', div: 'x + 2', k: -2, coeffs: [2, 0, -8] },
+        { poly: '3x^2 + 7x', div: 'x - 1', k: 1, coeffs: [3, 7, 0] },
+        { poly: 'x^2 - 5x + 6', div: 'x - 2', k: 2, coeffs: [1, -5, 6] },
+
+        // === TINGKAT 2: Polinomial Derajat 3 dibagi (x - k) ===
+        { poly: 'x^3 - 2x^2 - 5x + 6', div: 'x - 1', k: 1, coeffs: [1, -2, -5, 6] },
+        { poly: '2x^3 - 3x^2 + 4x - 5', div: 'x - 2', k: 2, coeffs: [2, -3, 4, -5] },
+        { poly: 'x^3 + 4x^2 + x - 6', div: 'x + 3', k: -3, coeffs: [1, 4, 1, -6] },
+        { poly: '3x^3 - 4x^2 + 2x - 1', div: 'x - 1', k: 1, coeffs: [3, -4, 2, -1] },
+        { poly: 'x^3 - 6x^2 + 11x - 6', div: 'x - 2', k: 2, coeffs: [1, -6, 11, -6] },
+        { poly: '2x^3 + 5x^2 - 4x - 3', div: 'x + 1', k: -1, coeffs: [2, 5, -4, -3] },
+        { poly: 'x^3 - 3x^2 + 4', div: 'x - 2', k: 2, coeffs: [1, -3, 0, 4] },
+        { poly: '2x^3 - 7x + 2', div: 'x - 1', k: 1, coeffs: [2, 0, -7, 2] },
+        { poly: 'x^3 + 8', div: 'x + 2', k: -2, coeffs: [1, 0, 0, 8] },
+        { poly: '3x^3 - 5x^2 + 8', div: 'x - 2', k: 2, coeffs: [3, -5, 0, 8] },
+        { poly: 'x^3 - 7x - 6', div: 'x + 2', k: -2, coeffs: [1, 0, -7, -6] },
+        { poly: '4x^3 - 2x^2 + 5x - 7', div: 'x - 1', k: 1, coeffs: [4, -2, 5, -7] },
+        { poly: 'x^3 - 27', div: 'x - 3', k: 3, coeffs: [1, 0, 0, -27] },
+        { poly: '2x^3 + 3x^2 - 8x - 12', div: 'x + 2', k: -2, coeffs: [2, 3, -8, -12] },
+        { poly: 'x^3 + 5x^2 - 2x - 24', div: 'x - 2', k: 2, coeffs: [1, 5, -2, -24] },
+
+        // === TINGKAT 3: Polinomial Derajat 3 Menantang & Pembagi Negatif ===
+        { poly: '3x^3 + 7x^2 - 4x - 6', div: 'x + 3', k: -3, coeffs: [3, 7, -4, -6] },
+        { poly: '2x^3 - 9x^2 + 7x + 6', div: 'x - 3', k: 3, coeffs: [2, -9, 7, 6] },
+        { poly: 'x^3 + 2x^2 - 13x + 10', div: 'x - 1', k: 1, coeffs: [1, 2, -13, 10] },
+        { poly: 'x^3 - 4x^2 - 7x + 10', div: 'x + 2', k: -2, coeffs: [1, -4, -7, 10] },
+        { poly: '2x^3 + x^2 - 18x - 9', div: 'x - 3', k: 3, coeffs: [2, 1, -18, -9] },
+        { poly: '3x^3 - 2x^2 + 5', div: 'x + 1', k: -1, coeffs: [3, -2, 0, 5] },
+        { poly: 'x^3 - 12x + 16', div: 'x - 2', k: 2, coeffs: [1, 0, -12, 16] },
+        { poly: '4x^3 + 8x^2 - x - 2', div: 'x + 2', k: -2, coeffs: [4, 8, -1, -2] },
+        { poly: '2x^3 - 5x^2 - 4x + 12', div: 'x - 2', k: 2, coeffs: [2, -5, -4, 12] },
+        { poly: 'x^3 + 6x^2 + 11x + 6', div: 'x + 1', k: -1, coeffs: [1, 6, 11, 6] },
+
+        // === TINGKAT 4: Polinomial Derajat 4 dibagi (x - k) ===
+        { poly: 'x^4 - 2x^3 + 3x^2 - 4x + 5', div: 'x - 1', k: 1, coeffs: [1, -2, 3, -4, 5] },
+        { poly: '2x^4 - 3x^3 + x^2 - 2x + 4', div: 'x - 2', k: 2, coeffs: [2, -3, 1, -2, 4] },
+        { poly: 'x^4 + 3x^3 - 5x^2 - 6x + 8', div: 'x + 1', k: -1, coeffs: [1, 3, -5, -6, 8] },
+        { poly: 'x^4 - 5x^2 + 4', div: 'x - 2', k: 2, coeffs: [1, 0, -5, 0, 4] },
+        { poly: '3x^4 - 2x^3 + 4x - 6', div: 'x + 1', k: -1, coeffs: [3, -2, 0, 4, -6] },
+        { poly: 'x^4 - 16', div: 'x - 2', k: 2, coeffs: [1, 0, 0, 0, -16] },
+        { poly: '2x^4 + x^3 - 8x^2 - x + 6', div: 'x - 1', k: 1, coeffs: [2, 1, -8, -1, 6] },
+        { poly: 'x^4 - 4x^3 + 6x^2 - 4x + 1', div: 'x - 1', k: 1, coeffs: [1, -4, 6, -4, 1] },
+        { poly: 'x^4 + 2x^3 - 7x^2 - 8x + 12', div: 'x + 3', k: -3, coeffs: [1, 2, -7, -8, 12] },
+        { poly: '2x^4 - 5x^3 + 4x^2 - x - 2', div: 'x - 2', k: 2, coeffs: [2, -5, 4, -1, -2] },
+        { poly: '3x^4 - 10x^2 + 9', div: 'x - 1', k: 1, coeffs: [3, 0, -10, 0, 9] },
+        { poly: 'x^4 + 4x^3 - 16x - 16', div: 'x + 2', k: -2, coeffs: [1, 4, 0, -16, -16] },
+        { poly: '2x^4 - 7x^3 + 2x^2 + 12x - 8', div: 'x - 1', k: 1, coeffs: [2, -7, 2, 12, -8] },
+        { poly: 'x^4 - 3x^3 - 10x^2 + 24x', div: 'x + 3', k: -3, coeffs: [1, -3, -10, 24, 0] },
+        { poly: '2x^4 + 3x^3 - 11x^2 - 9x + 15', div: 'x - 2', k: 2, coeffs: [2, 3, -11, -9, 15] }
+      ];
+
+      blueprints.forEach((bp, index) => {
+        const k = bp.k;
+        const coeffs = bp.coeffs;
+        const n = coeffs.length; // Banyak kolom
+        const m = n - 1;        // Derajat hasil bagi (panjang hasil bagi)
+
+        const rowMid = new Array(n).fill(null);
+        const rowBot = new Array(n).fill(0);
+
+        rowBot[0] = coeffs[0];
+        for (let c = 1; c < n; c++) {
+          rowMid[c] = k * rowBot[c - 1];
+          rowBot[c] = coeffs[c] + rowMid[c];
+        }
+
+        // Tentukan missing slots pedagogis untuk diisi siswa
+        const missingSlots = [];
+        
+        // 1. Pengali kiri k
+        missingSlots.push({ row: 'k', col: 0, val: k });
+
+        // 2. Sel perkalian di baris tengah
+        if (n >= 3) {
+          missingSlots.push({ row: 'mid', col: 1, val: rowMid[1] });
+        }
+        if (n >= 4 && index % 2 === 1) {
+          missingSlots.push({ row: 'mid', col: 2, val: rowMid[2] });
+        }
+
+        // 3. Sel di baris bawah (Hasil Bagi / Sisa)
+        missingSlots.push({ row: 'bot', col: 0, val: rowBot[0] });
+        missingSlots.push({ row: 'bot', col: n - 1, val: rowBot[n - 1] }); // Sisa S
+
+        if (n >= 4 && index % 2 === 0) {
+          missingSlots.push({ row: 'bot', col: 1, val: rowBot[1] });
+        }
+
+        // Distractors pengecoh
+        const distractors = [
+          k * -1,
+          rowBot[n - 1] + 2,
+          (rowBot[0] || 1) - 1,
+          (rowMid[1] !== undefined ? rowMid[1] * -1 : 4),
+          0
+        ];
+
+        bank.push({
+          id: index + 1,
+          texDisplay: `f(x) = ${bp.poly} \\quad \\text{dibagi oleh} \\quad P(x) = ${bp.div}`,
+          k: k,
+          coeffs: coeffs,
+          rowMid: rowMid,
+          rowBot: rowBot,
+          quotientLength: m,
+          missingSlots: missingSlots,
+          distractors: Array.from(new Set(distractors))
+        });
+      });
+
+      return bank;
+    }
+  </script>
+
+  <script>
+    let ALL_QUESTIONS = [];
+    let matchQuestions = [];
+    let totalRounds = 6;
+    let currentRoundIndex = 0;
+    let roundTimer = 60;
+    let timerInterval = null;
+
+    // Player States
+    const pState = {
+      1: { name: 'Pemain 1', score: 0, streak: 0, hasAnswered: false, activeSlotId: null, selectedChip: null },
+      2: { name: 'Pemain 2', score: 0, streak: 0, hasAnswered: false, activeSlotId: null, selectedChip: null }
+    };
+
+    // Navigation View Controls
+    function goToCoverScreen() {
+      clearInterval(timerInterval);
+      document.getElementById('coverScreen').classList.remove('hidden');
+      document.getElementById('startScreen').classList.add('hidden');
+      document.getElementById('gameArena').classList.add('hidden');
+      document.getElementById('gameOverScreen').classList.add('hidden');
+      renderMathIn(document.getElementById('coverScreen'));
+    }
+
+    function goToLobbyScreen() {
+      clearInterval(timerInterval);
+      document.getElementById('coverScreen').classList.add('hidden');
+      document.getElementById('startScreen').classList.remove('hidden');
+      document.getElementById('gameArena').classList.add('hidden');
+      document.getElementById('gameOverScreen').classList.add('hidden');
+      renderMathIn(document.getElementById('startScreen'));
+    }
+
+    function openMaterialModal() {
+      const modal = document.getElementById('materialModal');
+      modal.classList.remove('hidden');
+      renderMathIn(modal);
+    }
+
+    function closeMaterialModal() {
+      document.getElementById('materialModal').classList.add('hidden');
+    }
+
+    function openDevModal() {
+      document.getElementById('developerModal').classList.remove('hidden');
+    }
+
+    function closeDevModal() {
+      document.getElementById('developerModal').classList.add('hidden');
+    }
+
+    function startDuelGame() {
+      initAudio();
+
+      const p1Input = document.getElementById('inputP1Name').value.trim() || 'Pemain 1';
+      const p2Input = document.getElementById('inputP2Name').value.trim() || 'Pemain 2';
+      totalRounds = parseInt(document.getElementById('roundsSelect').value, 10) || 6;
+
+      pState[1].name = p1Input;
+      pState[1].score = 0;
+      pState[1].streak = 0;
+      pState[1].hasAnswered = false;
+      pState[1].activeSlotId = null;
+
+      pState[2].name = p2Input;
+      pState[2].score = 0;
+      pState[2].streak = 0;
+      pState[2].hasAnswered = false;
+      pState[2].activeSlotId = null;
+
+      document.getElementById('headerP1Name').textContent = p1Input;
+      document.getElementById('headerP2Name').textContent = p2Input;
+      document.getElementById('p1CardTitle').textContent = p1Input;
+      document.getElementById('p2CardTitle').textContent = p2Input;
+
+      updateScoresUI();
+
+      // Shuffle 50 Horner questions
+      ALL_QUESTIONS = build50HornerQuestions();
+      matchQuestions = ALL_QUESTIONS.slice().sort(() => Math.random() - 0.5).slice(0, totalRounds);
+      currentRoundIndex = 0;
+
+      document.getElementById('coverScreen').classList.add('hidden');
+      document.getElementById('startScreen').classList.add('hidden');
+      document.getElementById('gameOverScreen').classList.add('hidden');
+      document.getElementById('gameArena').classList.remove('hidden');
+
+      loadRound(currentRoundIndex);
+    }
+
+    function updateScoresUI() {
+      document.getElementById('headerP1Score').textContent = pState[1].score;
+      document.getElementById('headerP2Score').textContent = pState[2].score;
+      document.getElementById('p1ScoreDisplay').textContent = pState[1].score;
+      document.getElementById('p2ScoreDisplay').textContent = pState[2].score;
+      document.getElementById('p1StreakTag').textContent = `${pState[1].streak}🔥`;
+      document.getElementById('p2StreakTag').textContent = `${pState[2].streak}🔥`;
+    }
+
+    function loadRound(roundIdx) {
+      if (roundIdx >= matchQuestions.length) {
+        endDuelMatch();
+        return;
+      }
+
+      clearInterval(timerInterval);
+      const qData = matchQuestions[roundIdx];
+
+      // Babak awal Drag & Drop, babak lanjut Virtual Numpad
+      const isDragMode = roundIdx < Math.ceil(matchQuestions.length / 2);
+      const currentMode = isDragMode ? 'drag' : 'type';
+
+      // Reset Player round states
+      pState[1].hasAnswered = false;
+      pState[2].hasAnswered = false;
+      pState[1].activeSlotId = null;
+      pState[2].activeSlotId = null;
+
+      document.getElementById('p1SubmitBtn').disabled = false;
+      document.getElementById('p2SubmitBtn').disabled = false;
+      document.getElementById('p1SubmitBtn').classList.remove('opacity-40', 'cursor-not-allowed');
+      document.getElementById('p2SubmitBtn').classList.remove('opacity-40', 'cursor-not-allowed');
+      document.getElementById('p1StatusText').textContent = 'Lengkapi bagan Horner...';
+      document.getElementById('p2StatusText').textContent = 'Lengkapi bagan Horner...';
+
+      document.getElementById('roundBadge').textContent = `Babak ${roundIdx + 1} / ${matchQuestions.length}`;
+      const modeBadge = document.getElementById('modeBadge');
+
+      if (isDragMode) {
+        modeBadge.className = 'bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1';
+        modeBadge.innerHTML = '<span>🖐️ Drag & Drop</span>';
+        document.getElementById('p1ChipBankWrapper').classList.remove('hidden');
+        document.getElementById('p2ChipBankWrapper').classList.remove('hidden');
+        document.getElementById('p1NumpadWrapper').classList.add('hidden');
+        document.getElementById('p2NumpadWrapper').classList.add('hidden');
+      } else {
+        modeBadge.className = 'bg-indigo-100 text-indigo-800 border border-indigo-300 text-xs font-semibold px-2.5 py-0.5 rounded-full flex items-center gap-1';
+        modeBadge.innerHTML = '<span>🔢 Virtual Numpad</span>';
+        document.getElementById('p1ChipBankWrapper').classList.add('hidden');
+        document.getElementById('p2ChipBankWrapper').classList.add('hidden');
+        document.getElementById('p1NumpadWrapper').classList.remove('hidden');
+        document.getElementById('p2NumpadWrapper').classList.remove('hidden');
+      }
+
+      // Render MathJax Equation pada Display Soal
+      const problemContainer = document.getElementById('mathProblemDisplay');
+      const parts = qData.texDisplay.split('\\quad \\text{dibagi oleh} \\quad');
+      problemContainer.innerHTML = `\\[ ${parts[0]} \\]
+      <div class="text-xs text-slate-500 font-semibold mt-0.5">
+        Pembagi Linier: \\[ ${parts[1]} \\]
+      </div>`;
+      renderMathIn(problemContainer);
+
+      // Render both Horner Grids
+      renderHornerForPlayer(1, qData, currentMode);
+      renderHornerForPlayer(2, qData, currentMode);
+
+      if (isDragMode) {
+        renderChipsForPlayer(1, qData);
+        renderChipsForPlayer(2, qData);
+      } else {
+        autoSelectFirstSlot(1);
+        autoSelectFirstSlot(2);
+      }
+
+      // Countdown Timer (60s)
+      roundTimer = 60;
+      updateTimerDisplay();
+
+      timerInterval = setInterval(() => {
+        roundTimer--;
+        updateTimerDisplay();
+        if (roundTimer <= 5 && roundTimer > 0) playTone('tick');
+        if (roundTimer <= 0) {
+          clearInterval(timerInterval);
+          handleRoundTimeOut();
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const timerText = document.getElementById('timerText');
+      const timerBar = document.getElementById('timerBar');
+      timerText.textContent = `${roundTimer}s`;
+
+      const pct = Math.max(0, (roundTimer / 60) * 100);
+      timerBar.style.width = `${pct}%`;
+
+      if (pct > 40) {
+        timerBar.className = 'h-full bg-emerald-500 rounded-full transition-all duration-300';
+      } else if (pct > 15) {
+        timerBar.className = 'h-full bg-amber-500 rounded-full transition-all duration-300';
+      } else {
+        timerBar.className = 'h-full bg-rose-500 rounded-full transition-all duration-300 pulse-danger';
+      }
+    }
+  </script>
+
+  <script>
+    /*
+     * Horner Scheme Table Layout (Standar Pembagi Linier x - k):
+     * Header: Suku x^n
+     * Baris 1: [ Pengali k ] | Garis Tegak | [ koefisien atas f(x) ]
+     * Baris 2: [ (kosong) ]  | Garis Tegak | [ baris perkalian rowMid ]
+     * Garis Penjumlahan (+)
+     * Baris 3: [ = ]         | Garis Tegak | [ Hasil Bagi H(x) ... | Sisa S ]
+     */
+    function renderHornerForPlayer(pId, data, mode) {
+      const container = document.getElementById(`p${pId}HornerContainer`);
+      container.innerHTML = '';
+      const cols = data.coeffs.length;
+      const deg = cols - 1;
+
+      const table = document.createElement('table');
+      table.className = 'border-separate border-spacing-1 text-center select-none text-xs sm:text-sm';
+
+      // ====== BARIS 0: Header Pangkat Aljabar x^n ======
+      const trHead = document.createElement('tr');
+      const tdEmptyHead = document.createElement('td');
+      tdEmptyHead.className = 'p-0.5 text-[11px] font-bold text-slate-400 text-right pr-2';
+      tdEmptyHead.innerHTML = '$\\text{Suku}:';
+      trHead.appendChild(tdEmptyHead);
+
+      const tdDividerHead = document.createElement('td');
+      tdDividerHead.className = 'w-2';
+      trHead.appendChild(tdDividerHead);
+
+      for (let c = 0; c < cols; c++) {
+        const td = document.createElement('td');
+        td.className = 'p-0.5 text-center';
+        const power = deg - c;
+        let pLabel = power > 1 ? `x^${power}` : (power === 1 ? 'x' : 'x^0');
+        td.innerHTML = `<span class="text-[10px] font-semibold text-slate-500 font-mono">$${pLabel}$</span>`;
+        trHead.appendChild(td);
+      }
+      table.appendChild(trHead);
+
+      // ====== BARIS 1: Pengali k & Koefisien Atas ======
+      const tr1 = document.createElement('tr');
+      
+      const tdK = document.createElement('td');
+      tdK.className = 'p-0.5 align-middle';
+      tdK.innerHTML = `
+        <div class="flex items-center gap-1">
+          <span class="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-1 py-0.5 rounded border border-emerald-300" title="Pembuat nol x = k">$k$</span>
+          ${createSlotCellHTML(pId, 'k', 0, data.k, isSlotMissing(data, 'k', 0), mode)}
+        </div>
+      `;
+      tr1.appendChild(tdK);
+
+      // Pembatas Tegak
+      const tdDivider = document.createElement('td');
+      tdDivider.rowSpan = 2;
+      tdDivider.className = 'w-2 border-r-4 border-emerald-500 px-1';
+      tr1.appendChild(tdDivider);
+
+      // Koefisien Atas Polinomial
+      for (let c = 0; c < cols; c++) {
+        const td = document.createElement('td');
+        td.className = 'p-0.5';
+        td.innerHTML = createSlotCellHTML(pId, 'top', c, data.coeffs[c], false, mode);
+        tr1.appendChild(td);
+      }
+      table.appendChild(tr1);
+
+      // ====== BARIS 2: Perkalian Tengah (rowMid) ======
+      const tr2 = document.createElement('tr');
+      const tdMidNote = document.createElement('td');
+      tdMidNote.className = 'text-[10px] text-slate-400 font-semibold text-right pr-1';
+      tdMidNote.innerHTML = '($\\times k$)';
+      tr2.appendChild(tdMidNote);
+
+      for (let c = 0; c < cols; c++) {
+        const td = document.createElement('td');
+        td.className = 'p-0.5';
+        if (c === 0) {
+          // Kolom pertama di baris tengah tidak ada perkalian (langsung turun)
+          td.innerHTML = `
+            <div class="horner-cell w-11 sm:w-12 h-10 rounded-xl flex items-center justify-center font-bold text-slate-300 border border-slate-200 bg-slate-50" title="Turun langsung">
+              —
+            </div>
+          `;
+        } else {
+          td.innerHTML = createSlotCellHTML(pId, 'mid', c, data.rowMid[c], isSlotMissing(data, 'mid', c), mode);
+        }
+        tr2.appendChild(td);
+      }
+      table.appendChild(tr2);
+
+      // ====== BARIS GARIS PENJUMLAHAN (+) ======
+      const trLine = document.createElement('tr');
+      const tdPlus = document.createElement('td');
+      tdPlus.className = 'text-right pr-2 text-emerald-600 font-bold text-base';
+      tdPlus.innerHTML = '+';
+      trLine.appendChild(tdPlus);
+
+      const tdLineBlank = document.createElement('td');
+      tdLineBlank.className = 'p-0';
+      trLine.appendChild(tdLineBlank);
+
+      const tdLineBar = document.createElement('td');
+      tdLineBar.colSpan = cols;
+      tdLineBar.className = 'p-0';
+      tdLineBar.innerHTML = `<div class="h-1 bg-gradient-to-r from-emerald-400 via-teal-400 to-indigo-400 rounded-full w-full"></div>`;
+      trLine.appendChild(tdLineBar);
+      table.appendChild(trLine);
+
+      // ====== BARIS 3: Hasil Bagi H(x) & Sisa S ======
+      const trBot = document.createElement('tr');
+      const tdResLabel = document.createElement('td');
+      tdResLabel.className = 'text-[10px] text-slate-400 font-semibold text-right pr-1';
+      tdResLabel.textContent = '=';
+      trBot.appendChild(tdResLabel);
+
+      const tdDividerBot = document.createElement('td');
+      tdDividerBot.className = 'p-0';
+      trBot.appendChild(tdDividerBot);
+
+      for (let c = 0; c < cols; c++) {
+        const td = document.createElement('td');
+        td.className = 'p-0.5';
+        const isRemainder = (c === cols - 1);
+        td.innerHTML = createSlotCellHTML(pId, 'bot', c, data.rowBot[c], isSlotMissing(data, 'bot', c), mode, isRemainder);
+        trBot.appendChild(td);
+      }
+      table.appendChild(trBot);
+
+      // ====== BARIS 4: Label Pembagian H(x) vs Sisa S ======
+      const trLabels = document.createElement('tr');
+      const tdEmptyLabel = document.createElement('td');
+      tdEmptyLabel.colSpan = 2;
+      trLabels.appendChild(tdEmptyLabel);
+
+      const tdHLabel = document.createElement('td');
+      tdHLabel.colSpan = cols - 1;
+      tdHLabel.className = 'text-center pt-1';
+      tdHLabel.innerHTML = `
+        <span class="text-[10px] font-bold text-blue-700 bg-blue-100/80 border border-blue-200 px-2 py-0.5 rounded-full inline-block">
+          Koefisien Hasil Bagi $H(x)$
+        </span>
+      `;
+      trLabels.appendChild(tdHLabel);
+
+      const tdSLabel = document.createElement('td');
+      tdSLabel.className = 'text-center pt-1';
+      tdSLabel.innerHTML = `
+        <span class="text-[10px] font-bold text-amber-800 bg-amber-100/80 border border-amber-300 px-2 py-0.5 rounded-full inline-block">
+          Sisa $S$
+        </span>
+      `;
+      trLabels.appendChild(tdSLabel);
+
+      table.appendChild(trLabels);
+      container.appendChild(table);
+
+      // Render MathJax
+      renderMathIn(container);
+    }
+
+    function isSlotMissing(data, row, col) {
+      return data.missingSlots.some(s => s.row === row && s.col === col);
+    }
+
+    function createSlotCellHTML(pId, row, col, val, isMissing, mode, isRemainder = false) {
+      const slotId = `slot_p${pId}_${row}_${col}`;
+
+      if (!isMissing) {
+        let bg = 'bg-slate-100 border-slate-300 text-slate-700';
+        if (row === 'k') bg = 'bg-emerald-50 border-emerald-300 text-emerald-800';
+        else if (isRemainder) bg = 'bg-amber-50 border-amber-300 text-amber-800';
+
+        return `
+          <div class="horner-cell w-11 sm:w-12 h-10 rounded-xl flex items-center justify-center font-mono font-bold text-xs sm:text-sm border ${bg}">
+            ${val}
+          </div>
+        `;
+      }
+
+      if (mode === 'drag') {
+        return `
+          <div id="${slotId}"
+               data-player="${pId}"
+               data-row="${row}"
+               data-col="${col}"
+               data-expected="${val}"
+               onclick="handleSlotTap('${slotId}', ${pId})"
+               ondragover="handleSlotDragOver(event)"
+               ondragleave="handleSlotDragLeave(event)"
+               ondrop="handleSlotDrop(event, '${slotId}', ${pId})"
+               class="horner-cell droppable-slot-p${pId} w-11 sm:w-12 h-10 rounded-xl border-2 border-dashed ${pId === 1 ? 'border-blue-400 bg-blue-50/40' : 'border-rose-400 bg-rose-50/40'} flex items-center justify-center font-mono font-bold text-xs sm:text-sm cursor-pointer hover:bg-white transition-all shadow-inner">
+            <span class="placeholder-q text-slate-400 text-xs">?</span>
+          </div>
+        `;
+      } else {
+        // Mode Type-In Virtual Numpad
+        return `
+          <div id="${slotId}"
+               tabindex="0"
+               data-player="${pId}"
+               data-row="${row}"
+               data-col="${col}"
+               data-expected="${val}"
+               onclick="selectActiveSlot(${pId}, '${slotId}')"
+               onkeydown="handlePhysicalKeySlot(event, ${pId}, '${slotId}')"
+               class="horner-cell typable-slot-p${pId} w-11 sm:w-12 h-10 rounded-xl border-2 ${pId === 1 ? 'border-blue-300 bg-white' : 'border-rose-300 bg-white'} flex items-center justify-center font-mono font-bold text-xs sm:text-sm cursor-pointer hover:border-slate-400 transition-all shadow-sm focus:outline-none">
+            <span class="slot-text-content text-slate-400 font-normal text-xs">?</span>
+          </div>
+        `;
+      }
+    }
+  </script>
+
+  <script>
+    function selectActiveSlot(pId, slotId) {
+      playTone('tap');
+
+      if (pState[pId].activeSlotId) {
+        const prev = document.getElementById(pState[pId].activeSlotId);
+        if (prev) {
+          prev.classList.remove(pId === 1 ? 'horner-active-p1' : 'horner-active-p2');
+        }
+      }
+
+      pState[pId].activeSlotId = slotId;
+      const slot = document.getElementById(slotId);
+      if (slot) {
+        slot.classList.add(pId === 1 ? 'horner-active-p1' : 'horner-active-p2');
+        slot.focus();
+
+        const row = slot.dataset.row;
+        let labelName = 'Kotak Bagan';
+        if (row === 'k') labelName = 'Pengali k';
+        else if (row === 'mid') labelName = 'Perkalian k';
+        else if (row === 'bot') labelName = 'Hasil Tambah';
+
+        document.getElementById(`p${pId}ActiveSlotLabel`).textContent = `(Aktif: ${labelName})`;
+      }
+    }
+
+    function autoSelectFirstSlot(pId) {
+      const slots = document.querySelectorAll(`.typable-slot-p${pId}`);
+      if (slots.length > 0) {
+        selectActiveSlot(pId, slots[0].id);
+      }
+    }
+
+    function numpadInput(pId, digit) {
+      playTone('tap');
+      ensureActiveSlot(pId);
+      const slotId = pState[pId].activeSlotId;
+      if (!slotId) return;
+
+      const slot = document.getElementById(slotId);
+      if (!slot) return;
+
+      let current = slot.dataset.currentValue || '';
+      if (current.length >= 4) return;
+
+      if (current === '0') {
+        current = digit;
+      } else {
+        current += digit;
+      }
+
+      setSlotValue(pId, slot, current);
+    }
+
+    function numpadBackspace(pId) {
+      playTone('tap');
+      ensureActiveSlot(pId);
+      const slotId = pState[pId].activeSlotId;
+      if (!slotId) return;
+
+      const slot = document.getElementById(slotId);
+      if (!slot) return;
+
+      let current = slot.dataset.currentValue || '';
+      if (current.length > 0) {
+        current = current.slice(0, -1);
+        if (current === '-' || current === '') {
+          clearSlotValue(pId, slot);
+        } else {
+          setSlotValue(pId, slot, current);
+        }
+      }
+    }
+
+    function numpadToggleNegative(pId) {
+      playTone('tap');
+      ensureActiveSlot(pId);
+      const slotId = pState[pId].activeSlotId;
+      if (!slotId) return;
+
+      const slot = document.getElementById(slotId);
+      if (!slot) return;
+
+      let current = slot.dataset.currentValue || '';
+      if (current.startsWith('-')) {
+        current = current.substring(1);
+      } else {
+        current = '-' + current;
+      }
+      setSlotValue(pId, slot, current);
+    }
+
+    function clearActiveSlot(pId) {
+      playTone('tap');
+      ensureActiveSlot(pId);
+      const slotId = pState[pId].activeSlotId;
+      if (!slotId) return;
+
+      const slot = document.getElementById(slotId);
+      if (slot) clearSlotValue(pId, slot);
+    }
+
+    function numpadNextSlot(pId) {
+      playTone('tap');
+      const slots = Array.from(document.querySelectorAll(`.typable-slot-p${pId}`));
+      if (slots.length === 0) return;
+
+      let currentIndex = slots.findIndex(s => s.id === pState[pId].activeSlotId);
+      if (currentIndex === -1 || currentIndex >= slots.length - 1) {
+        selectActiveSlot(pId, slots[0].id);
+      } else {
+        selectActiveSlot(pId, slots[currentIndex + 1].id);
+      }
+    }
+
+    function ensureActiveSlot(pId) {
+      if (!pState[pId].activeSlotId) {
+        const slots = Array.from(document.querySelectorAll(`.typable-slot-p${pId}`));
+        const emptySlot = slots.find(s => !s.dataset.currentValue);
+        if (emptySlot) {
+          selectActiveSlot(pId, emptySlot.id);
+        } else if (slots.length > 0) {
+          selectActiveSlot(pId, slots[0].id);
+        }
+      }
+    }
+
+    function setSlotValue(pId, slot, val) {
+      slot.dataset.currentValue = val;
+      const textSpan = slot.querySelector('.slot-text-content');
+      if (textSpan) {
+        textSpan.textContent = val;
+        textSpan.className = `slot-text-content font-mono font-bold text-sm ${pId === 1 ? 'text-blue-700' : 'text-rose-700'} badge-pop`;
+      }
+    }
+
+    function clearSlotValue(pId, slot) {
+      delete slot.dataset.currentValue;
+      const textSpan = slot.querySelector('.slot-text-content');
+      if (textSpan) {
+        textSpan.textContent = '?';
+        textSpan.className = 'slot-text-content text-slate-400 font-normal text-xs';
+      }
+    }
+
+    function handlePhysicalKeySlot(e, pId, slotId) {
+      if (e.key >= '0' && e.key <= '9') {
+        numpadInput(pId, e.key);
+      } else if (e.key === '-') {
+        numpadToggleNegative(pId);
+      } else if (e.key === 'Backspace') {
+        numpadBackspace(pId);
+      } else if (e.key === 'Tab' || e.key === 'Enter') {
+        e.preventDefault();
+        numpadNextSlot(pId);
+      }
+    }
+  </script>
+
+  <script>
+    function renderChipsForPlayer(pId, data) {
+      const container = document.getElementById(`p${pId}ChipBank`);
+      container.innerHTML = '';
+      pState[pId].selectedChip = null;
+
+      const numbers = [];
+      data.missingSlots.forEach(s => numbers.push(s.val));
+      if (data.distractors) numbers.push(...data.distractors);
+
+      // Shuffle chips
+      const shuffled = numbers.slice().sort(() => Math.random() - 0.5);
+
+      shuffled.forEach((num, idx) => {
+        const chip = document.createElement('div');
+        const chipId = `chip_p${pId}_${idx}_${num}`;
+        chip.id = chipId;
+        chip.draggable = true;
+        chip.dataset.value = num;
+        chip.className = `px-3 py-1 rounded-xl ${pId === 1 ? 'bg-blue-600 hover:bg-blue-500' : 'bg-rose-600 hover:bg-rose-500'} text-white font-mono font-bold text-xs sm:text-sm shadow cursor-pointer active:scale-95 transition-all select-none min-w-[38px] text-center`;
+        chip.textContent = num;
+
+        chip.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('text/plain', JSON.stringify({ chipId: chip.id, value: num, pId: pId }));
+          playTone('tap');
+        });
+
+        chip.addEventListener('click', () => {
+          handleChipTap(pId, chip, num);
+        });
+
+        container.appendChild(chip);
+      });
+    }
+
+    function handleChipTap(pId, chip, val) {
+      playTone('tap');
+      if (pState[pId].selectedChip === chip) {
+        chip.classList.remove('ring-4', 'ring-amber-400');
+        pState[pId].selectedChip = null;
+        return;
+      }
+
+      if (pState[pId].selectedChip) {
+        pState[pId].selectedChip.classList.remove('ring-4', 'ring-amber-400');
+      }
+
+      pState[pId].selectedChip = chip;
+      chip.classList.add('ring-4', 'ring-amber-400');
+    }
+
+    function handleSlotTap(slotId, pId) {
+      const slot = document.getElementById(slotId);
+      if (!slot) return;
+
+      if (slot.dataset.filledChipId) {
+        returnChipToPlayerBank(pId, slot);
+        playTone('tap');
+        return;
+      }
+
+      if (pState[pId].selectedChip) {
+        const chip = pState[pId].selectedChip;
+        placeChipInPlayerSlot(pId, slot, chip.dataset.value, chip.id);
+        chip.classList.remove('ring-4', 'ring-amber-400');
+        pState[pId].selectedChip = null;
+      }
+    }
+
+    function handleSlotDragOver(e) {
+      e.preventDefault();
+      e.currentTarget.classList.add('hovered');
+    }
+
+    function handleSlotDragLeave(e) {
+      e.currentTarget.classList.remove('hovered');
+    }
+
+    function handleSlotDrop(e, slotId, pId) {
+      e.preventDefault();
+      const slot = document.getElementById(slotId);
+      slot.classList.remove('hovered');
+
+      try {
+        const raw = e.dataTransfer.getData('text/plain');
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (data.pId !== pId) return;
+
+        if (slot.dataset.filledChipId) {
+          returnChipToPlayerBank(pId, slot);
+        }
+
+        placeChipInPlayerSlot(pId, slot, data.value, data.chipId);
+      } catch (err) {
+        console.error('Drop error:', err);
+      }
+    }
+
+    function placeChipInPlayerSlot(pId, slot, val, chipId) {
+      playTone('tap');
+      slot.dataset.currentValue = val;
+      slot.dataset.filledChipId = chipId;
+
+      slot.innerHTML = `<span class="badge-pop ${pId === 1 ? 'text-blue-700' : 'text-rose-700'} font-mono font-bold">${val}</span>`;
+      slot.classList.remove('border-dashed', 'bg-blue-50/40', 'bg-rose-50/40');
+      slot.classList.add('border-solid', pId === 1 ? 'border-blue-500' : 'border-rose-500', 'bg-white');
+
+      const chipElem = document.getElementById(chipId);
+      if (chipElem) chipElem.classList.add('hidden');
+    }
+
+    function returnChipToPlayerBank(pId, slot) {
+      const chipId = slot.dataset.filledChipId;
+      if (chipId) {
+        const chipElem = document.getElementById(chipId);
+        if (chipElem) chipElem.classList.remove('hidden');
+      }
+      delete slot.dataset.currentValue;
+      delete slot.dataset.filledChipId;
+      slot.innerHTML = `<span class="placeholder-q text-slate-400 text-xs">?</span>`;
+      slot.className = `horner-cell droppable-slot-p${pId} w-11 sm:w-12 h-10 rounded-xl border-2 border-dashed ${pId === 1 ? 'border-blue-400 bg-blue-50/40' : 'border-rose-400 bg-rose-50/40'} flex items-center justify-center font-mono font-bold text-xs sm:text-sm cursor-pointer hover:bg-white transition-all shadow-inner`;
+    }
+
+    function resetPlayerSlots(pId) {
+      const slots = document.querySelectorAll(`.droppable-slot-p${pId}`);
+      slots.forEach(slot => returnChipToPlayerBank(pId, slot));
+    }
+  </script>
+
+  <script>
+    function submitPlayerAnswer(pId) {
+      if (pState[pId].hasAnswered) return;
+      const qData = matchQuestions[currentRoundIndex];
+
+      let hasEmpty = false;
+      let allCorrect = true;
+      let wrongSlots = [];
+
+      qData.missingSlots.forEach(slotInfo => {
+        const slotId = `slot_p${pId}_${slotInfo.row}_${slotInfo.col}`;
+        const elem = document.getElementById(slotId);
+        if (!elem) return;
+
+        const val = elem.dataset.currentValue;
+        if (val === undefined || val === '') {
+          hasEmpty = true;
+          wrongSlots.push(elem);
+        } else if (parseInt(val, 10) !== parseInt(slotInfo.val, 10)) {
+          allCorrect = false;
+          wrongSlots.push(elem);
+        }
+      });
+
+      if (hasEmpty) {
+        playTone('wrong');
+        showToast('error', `${pState[pId].name}: Masih ada kotak kosong!`, 'Isi seluruh sel bagan sebelum mengirim.');
+        highlightMistakes(wrongSlots);
+        return;
+      }
+
+      if (allCorrect) {
+        pState[pId].hasAnswered = true;
+        pState[pId].streak++;
+
+        // Bonus duel: Pemain pertama benar mendapat poin lebih tinggi
+        const isFirstToAnswer = !pState[pId === 1 ? 2 : 1].hasAnswered;
+        const baseScore = isFirstToAnswer ? 300 : 180;
+        const timeBonus = Math.floor((roundTimer / 60) * 120);
+        const streakBonus = (pState[pId].streak - 1) * 30;
+        const totalEarned = baseScore + timeBonus + streakBonus;
+
+        pState[pId].score += totalEarned;
+        updateScoresUI();
+        playTone('correct');
+
+        const btn = document.getElementById(`p${pId}SubmitBtn`);
+        btn.disabled = true;
+        btn.classList.add('opacity-40', 'cursor-not-allowed');
+        document.getElementById(`p${pId}StatusText`).innerHTML = `✅ <strong class="text-emerald-600">+${totalEarned} Poin!</strong>`;
+
+        showToast('success', `${pState[pId].name} Menjawab Tepat!`, `Skema Horner lengkap (+${totalEarned} poin).`);
+
+        if (pState[1].hasAnswered && pState[2].hasAnswered) {
+          clearInterval(timerInterval);
+          setTimeout(() => {
+            currentRoundIndex++;
+            loadRound(currentRoundIndex);
+          }, 1200);
+        }
+
+      } else {
+        pState[pId].streak = 0;
+        updateScoresUI();
+        playTone('wrong');
+        highlightMistakes(wrongSlots);
+        showToast('error', `${pState[pId].name}: Bagan belum tepat!`, 'Periksa pengali k atau penjumlahan baris.');
+      }
+    }
+
+    function highlightMistakes(elements) {
+      elements.forEach(el => {
+        el.classList.add('shake-anim', 'border-rose-500');
+        setTimeout(() => el.classList.remove('shake-anim'), 400);
+      });
+    }
+
+    function handleRoundTimeOut() {
+      playTone('wrong');
+      showToast('info', 'Waktu Babak Selesai!', 'Melanjutkan ke babak berikutnya...');
+
+      setTimeout(() => {
+        currentRoundIndex++;
+        loadRound(currentRoundIndex);
+      }, 1500);
+    }
+
+    function endDuelMatch() {
+      clearInterval(timerInterval);
+      playTone('win');
+
+      document.getElementById('gameArena').classList.add('hidden');
+      const overScreen = document.getElementById('gameOverScreen');
+      overScreen.classList.remove('hidden');
+
+      const s1 = pState[1].score;
+      const s2 = pState[2].score;
+      const n1 = pState[1].name;
+      const n2 = pState[2].name;
+
+      document.getElementById('endP1Name').textContent = n1;
+      document.getElementById('endP2Name').textContent = n2;
+      document.getElementById('endP1Score').textContent = s1;
+      document.getElementById('endP2Score').textContent = s2;
+
+      const title = document.getElementById('duelWinnerTitle');
+      const subtitle = document.getElementById('duelWinnerSubtitle');
+      const note = document.getElementById('duelSummaryNote');
+
+      if (s1 > s2) {
+        title.innerHTML = `🏆 <span class="text-blue-600">${n1}</span> Juara Horner Arena!`;
+        subtitle.textContent = `Menang dengan keunggulan ${s1 - s2} poin atas ${n2}!`;
+        note.innerHTML = `Selamat kepada <strong>${n1}</strong> atas kecepatan dan ketelitian aljabar skema Horner. <strong>${n2}</strong> juga memberikan perlawanan yang luar biasa!`;
+      } else if (s2 > s1) {
+        title.innerHTML = `🏆 <span class="text-rose-600">${n2}</span> Juara Horner Arena!`;
+        subtitle.textContent = `Menang dengan keunggulan ${s2 - s1} poin atas ${n1}!`;
+        note.innerHTML = `Selamat kepada <strong>${n2}</strong> atas penguasaan bagan Horner yang presisi. <strong>${n1}</strong> menunjukkan daya juang yang hebat!`;
+      } else {
+        title.innerHTML = `🤝 Duel Seimbang Sempurna!`;
+        subtitle.textContent = `Kedua pemain memperoleh skor kembar ${s1} poin!`;
+        note.innerHTML = `Luar biasa! Kedua siswa memiliki kecepatan komputasi dan ketelitian Horner yang sama tangguhnya!`;
+      }
+
+      renderMathIn(overScreen);
+    }
+
+    function showToast(status, header, msg) {
+      const toast = document.getElementById('duelToast');
+      const card = document.getElementById('toastInnerCard');
+      const emoji = document.getElementById('toastEmoji');
+      const head = document.getElementById('toastHeader');
+      const desc = document.getElementById('toastDetail');
+
+      head.textContent = header;
+      desc.textContent = msg;
+
+      if (status === 'success') {
+        emoji.textContent = '🎉';
+        card.className = 'p-4 rounded-2xl shadow-xl border border-emerald-300 bg-emerald-50 text-emerald-950';
+      } else if (status === 'error') {
+        emoji.textContent = '⚠️';
+        card.className = 'p-4 rounded-2xl shadow-xl border border-rose-300 bg-rose-50 text-rose-950';
+      } else {
+        emoji.textContent = '💡';
+        card.className = 'p-4 rounded-2xl shadow-xl border border-blue-300 bg-blue-50 text-blue-950';
+      }
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2300);
+    }
+
+    // Initialize MathJax on Load
+    window.onload = function() {
+      render
